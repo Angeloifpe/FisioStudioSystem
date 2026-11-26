@@ -1,0 +1,81 @@
+/* ================= Responsividade (v3): telas inteiras sem rolar ================= */
+.form-fixa{display:flex;flex-direction:column;gap:18px;padding-bottom:0;}
+.form-actions.linha{flex-direction:row;justify-content:space-between;align-items:center;flex-wrap:wrap;}
+.queixa-h2{font-size:30px;margin:6px 0 4px;}
+.ta-queixa{min-height:96px;}
+.ta-diag{min-height:64px;}
+.queixa-linha{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:18px 24px;align-items:start;}
+@media (max-width:700px){.queixa-linha{grid-template-columns:1fr;}}
+
+/* Notebook (janela baixa, tela larga): tudo mais justo */
+@media (min-width:901px) and (max-height:1000px){
+  .appbar-inner{padding:12px 0;}
+  .page-content{padding-top:20px;padding-bottom:20px;}
+  .page-title{margin-bottom:14px;}
+  .page-title h1{font-size:30px;}
+  .page-title p{font-size:15px;margin-top:2px;}
+  .queixa-h2{font-size:22px;margin:2px 0 2px;}
+  .card{padding:20px;}
+  .form-actions{margin:0 -20px;padding:12px 20px 14px;}
+  .form-fixa{gap:14px;}
+  .ta-queixa{min-height:78px;}
+  .ta-diag{min-height:56px;}
+  .lateral-info{gap:14px!important;}
+  .cal-day{height:38px;}
+  .cal-head{margin-bottom:6px;}
+  .card-sm{padding:14px;}
+  .radio-card{padding:10px 14px;}
+  .bloco-modalidade{margin-bottom:14px!important;}
+  .metrics-row{gap:12px;}
+  .metric-card{padding:12px 16px;}
+  .metric-value strong{font-size:28px;}
+  .hora-grupo{padding:10px 0;}
+  .hora-pacientes{gap:6px;}
+}
+
+/* Confirmação de horário: no celular/tablet o botão fica sempre à vista */
+@media (max-width:900px){
+  .confirma-fixa{position:sticky;bottom:60px;z-index:6;display:flex;flex-direction:column;gap:8px;background:var(--creme,#faf4ee);padding:10px 0 6px;box-shadow:0 -10px 14px -6px var(--creme,#faf4ee);}
+  .confirma-fixa .card-sm{padding:10px 14px;}
+  .confirma-fixa .eyebrow{display:none;}
+}
+@media (max-width:900px){.form-fixa .form-actions{bottom:60px;}}
+.form-actions.linha{flex-wrap:nowrap;gap:16px;}
+.form-actions.linha .btn{width:auto;flex:0 0 auto;min-width:300px;}
+@media (max-width:640px){
+  .form-actions.linha{gap:10px;}
+  .form-actions.linha .btn{flex:1 1 auto;min-width:0;padding-left:14px;padding-right:14px;}
+  .queixa-h2{font-size:20px;}
+  .page-title h1{font-size:26px;}
+}
+@media (max-width:900px){.col-side-escolha{display:contents!important;}.cols{gap:20px;}}
+.radio-card > span:last-child{flex:1;text-align:left;}
+.confirma-linha{display:none;}
+@media (max-width:900px){
+  .confirma-fixa{align-self:stretch;width:100%;gap:6px;padding:8px 0 4px;}
+  .confirma-fixa > .card-sm,.confirma-fixa > .btn-text{display:none;}
+  .confirma-linha{display:block;text-align:center;font-size:14px;font-weight:600;color:var(--ameixa-escura);}
+}
+@media (max-width:640px){
+  .bloco-modalidade .radio-card{min-width:0!important;flex:1 1 0!important;padding:10px 12px;gap:8px;}
+  .bloco-modalidade .radio-card small{font-size:11px;}
+}
+
+/* Painel: a lista rola dentro do cartão (a página não precisa rolar) */
+@media (min-width:901px){
+  .tabela-horarios{max-height:calc(100dvh - 430px);min-height:150px;overflow-y:auto;padding-right:6px;}
+}
+@media (max-width:640px){
+  .metrics-row{grid-template-columns:repeat(2,1fr)!important;gap:10px;}
+  .metric-card{padding:10px 12px;border-radius:16px;}
+  .metric-label{font-size:12px;margin-bottom:2px;}
+  .metric-value{flex-direction:column;gap:0;}
+  .metric-value strong{font-size:26px;}
+  .metric-value span{font-size:12px;}
+}
+@media (max-width:640px){
+  .metrics-row > :last-child:nth-child(odd){grid-column:span 2;}
+  .page-title .actions{flex-wrap:nowrap;}
+  .page-title .actions .btn{width:auto;flex:1 1 0;min-width:0;}
+}
+

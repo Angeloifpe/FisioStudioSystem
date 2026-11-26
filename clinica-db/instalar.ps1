@@ -242,6 +242,24 @@ function Aplicar-Atualizacoes {
   else {
     Write-Host 'Atualização 019 já aplicada.'
   }
+
+  $temQueixa = & $psql @conexao -d clinica -tAc "SELECT 1 FROM information_schema.tables WHERE table_name = 'queixas_pacientes'"
+  if ($temQueixa -ne '1') {
+    Write-Host 'Aplicando atualização 020_queixa_principal.sql (tela Sobre a sua queixa)...'
+    Executar 'atualização 020' { & $psql @conexao -d clinica -P pager=off -v ON_ERROR_STOP=1 -q -f (Join-Path $pasta '020_queixa_principal.sql') }
+  }
+  else {
+    Write-Host 'Atualização 020 já aplicada.'
+  }
+
+  $tem021 = & $psql @conexao -d clinica -tAc "SELECT 1 FROM information_schema.columns WHERE table_name = 'agendamentos' AND column_name = 'cancelado_fora_do_prazo'"
+  if ($tem021 -ne '1') {
+    Write-Host 'Aplicando atualização 021_cancelar_remarcar_24h_e_perfil.sql (cancelamento 24h, remarcação, foto de perfil)...'
+    Executar 'atualização 021' { & $psql @conexao -d clinica -P pager=off -v ON_ERROR_STOP=1 -q -f (Join-Path $pasta '021_cancelar_remarcar_24h_e_perfil.sql') }
+  }
+  else {
+    Write-Host 'Atualização 021 já aplicada.'
+  }
 }
 
 # 3. Cria o banco
@@ -254,8 +272,7 @@ if ($existe -eq '1') {
   else {
     Write-Host "O banco 'clinica' já existe. Para recriá-lo do zero, rode: powershell -ExecutionPolicy Bypass -File instalar.ps1 -Recriar" -ForegroundColor Yellow
     Aplicar-Atualizacoes
-    Write-Host 'Rodando os testes no banco existente...'
-    Executar 'testes' { & $psql @conexao -d clinica -P pager=off -v ON_ERROR_STOP=1 -q -f (Join-Path $pasta '002_testes.sql') }
+    Write-Host 'Banco existente: os testes automáticos não rodam aqui (eles esperam um banco sem dados). Para testar, use -Recriar.'
     Write-Host 'Pronto.' -ForegroundColor Green
     exit 0
   }

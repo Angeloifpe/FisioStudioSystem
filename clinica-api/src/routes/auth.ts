@@ -120,18 +120,58 @@ authRoutes.post('/trocar-senha', autenticar, async (req, res) => {
 authRoutes.get('/me', autenticar, async (req, res) => {
   const u = usuarioDe(req);
   const dados = await queryOne(
-    `SELECT u.id, u.email, u.papel,
+    `SELECT u.id, u.email, u.papel, u.foto_perfil,
             (u.senha_temporaria_expira_em IS NOT NULL) AS trocar_senha,
             p.id AS paciente_id, p.nome_completo, p.cpf, p.data_nascimento,
             p.telefone, p.endereco, p.situacao, p.duracao_fisioterapia_min,
             p.liberado_pilates, p.liberado_fisioterapia,
-            p.nova_avaliacao_bloqueada, p.nova_avaliacao_pedida_em
+            p.nova_avaliacao_bloqueada, p.nova_avaliacao_pedida_em,
+            EXISTS (SELECT 1 FROM queixas_pacientes q WHERE q.paciente_id = p.id) AS queixa_registrada
        FROM usuarios u
        LEFT JOIN pacientes p ON p.usuario_id = u.id
       WHERE u.id = $1`,
     [u.id],
   );
   res.json(dados);
+});
+
+const perfilSchema = z.object({
+  email: z.string().trim().toLowerCase().email('E-mail inválido').optional(),
+  nome_completo: z.string().trim().min(3, 'Informe o nome completo').max(150).optional(),
+  cpf: z.string().transform((v) => v.replace(/\D/g, '')).pipe(z.string().length(11, 'CPF deve ter 11 dígitos')).optional(),
+  data_nascimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato AAAA-MM-DD').optional(),
+  telefone: z.string().trim().min(8, 'Telefone inválido').max(20).optional(),
+  endereco: z.string().trim().max(255).nullable().optional(),
+}).strict();
+
+/** Paciente corrige os próprios dados (a duração da sessão e a situação são da clínica). */
+authRoutes.patch('/me', autenticar, somente('PACIENTE'), async (req, res) => {
+  const { email, ...paciente } = perfilSchema.parse(req.body);
+  const campos = Object.entries(paciente).filter(([, v]) => v !== undefined);
+  await transacao(async (c) => {
+    if (email) await c.query('UPDATE usuarios SET email = $2 WHERE id = $1', [usuarioDe(req).id, email]);
+    if (campos.length) {
+      const sets = campos.map(([k], i) => `${k} = $${i + 2}`).join(', ');
+      await c.query(`UPDATE pacientes SET ${sets} WHERE id = $1`, [pacienteDe(req), ...campos.map(([, v]) => v)]);
+    }
+  });
+  res.json({ mensagem: 'Dados atualizados' });
+});
+
+const fotoSchema = z.object({
+  foto: z.string().max(500000, 'Foto grande demais').regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/, 'Envie uma imagem JPEG, PNG ou WebP'),
+});
+
+/** Foto de perfil (imagem já reduzida pelo app, enviada como data URL). */
+authRoutes.put('/me/foto', autenticar, async (req, res) => {
+  const { foto } = fotoSchema.parse(req.body);
+  await queryOne('UPDATE usuarios SET foto_perfil = $2 WHERE id = $1 RETURNING id', [usuarioDe(req).id, foto]);
+  res.json({ mensagem: 'Foto atualizada' });
+});
+
+authRoutes.delete('/me/foto', autenticar, async (req, res) => {
+  await queryOne('UPDATE usuarios SET foto_perfil = NULL WHERE id = $1 RETURNING id', [usuarioDe(req).id]);
+  res.json({ mensagem: 'Foto removida' });
 });
 
 /**

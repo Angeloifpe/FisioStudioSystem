@@ -605,8 +605,10 @@ BEGIN
   INSERT INTO pacientes (usuario_id, nome_completo, cpf, data_nascimento, telefone, situacao, liberado_pilates, liberado_fisioterapia)
   VALUES (v_u, 'Paciente 9', '99999999909', '1990-01-01', '81999990000', 'LIBERADO', TRUE, TRUE) RETURNING id INTO v_p9;
   PERFORM pg_temp.confere(
-    (SELECT duracao_fisioterapia_min FROM pacientes WHERE id = v_p9) = 30,
-    'paciente sem duração definida tem sessão de 30 min (011)');
+    (SELECT duracao_fisioterapia_min FROM pacientes WHERE id = v_p9) = 60,
+    'paciente sem duração definida tem sessão de 1 hora (021)');
+  -- Os testes seguintes usam sessão de 30 min
+  UPDATE pacientes SET duracao_fisioterapia_min = 30 WHERE id = v_p9;
   PERFORM pg_temp.espera_erro(
     format('UPDATE pacientes SET duracao_fisioterapia_min = 25 WHERE id = %L', v_p9),
     'ck_pacientes_duracao_fisio', 'duração da sessão abaixo de 30 min é recusada');

@@ -1,0 +1,70 @@
+/* ================= Responsividade (v2) ================= */
+html,body{max-width:100%;overflow-x:clip;}
+img,svg{max-width:100%;}
+.app-root{min-height:100vh;min-height:100dvh;}
+.hero,.split-screen,.loading-screen{min-height:100vh;min-height:100dvh;}
+
+/* Auth (cadastro / login): botão sempre visível */
+.split-title{font-size:40px;margin-bottom:12px;}
+.split-sub{opacity:.9;font-size:17px;}
+.form-auth{display:flex;flex-direction:column;gap:18px;padding-bottom:0;}
+.form-actions{display:flex;flex-direction:column;gap:10px;position:sticky;bottom:0;z-index:5;
+  margin:0 -28px;padding:14px 28px 18px;background:linear-gradient(to bottom,rgba(255,255,255,0),#fff 22%);
+  border-radius:0 0 var(--radius-card) var(--radius-card);}
+
+/* Notebook / janelas baixas */
+@media (max-height:800px){
+  .split-side{padding:32px 44px;gap:22px;}
+  .split-side .split-logo svg,.split-side .split-logo img{width:110px;height:auto;}
+  .split-title{font-size:32px;margin-bottom:8px;}
+  .split-sub{font-size:15px;}
+  .split-steps{gap:12px;}
+  .split-main{padding:20px 24px;}
+  .form-auth{gap:12px;padding:22px 26px 0;}
+  .form-auth h2{font-size:26px!important;}
+  .form-actions{margin:0 -26px;padding:12px 26px 14px;}
+  .hero-content{gap:18px;padding:24px 20px;}
+  .hero-badge{width:130px;height:130px;}
+  .hero h1{font-size:44px;}
+  .hero p.sub{font-size:17px;}
+  .hero-services{padding-bottom:18px;}
+  .page-content{padding-top:24px;}
+  .page-title{margin-bottom:18px;}
+}
+
+/* Tablet e celular: lateral vira faixa curta */
+@media (max-width:860px){
+  .split-side{padding:20px 20px 18px;gap:10px;flex-direction:row;align-items:center;flex-wrap:wrap;}
+  .split-side .split-logo svg,.split-side .split-logo img{width:64px;height:auto;}
+  .split-title{font-size:22px;margin-bottom:2px;}
+  .split-sub{font-size:14px;}
+  .split-steps{display:none;}
+  .split-main{padding:16px 14px 0;align-items:flex-start;}
+  .form-auth{padding:20px 18px 0;gap:12px;}
+  .form-actions{margin:0 -18px;padding:12px 18px 14px;}
+}
+
+/* Celular */
+@media (max-width:640px){
+  .container{padding:0 16px;}
+  .card{padding:18px;border-radius:20px;}
+  .card-sm{padding:14px;}
+  .page-content{padding-top:18px;padding-bottom:96px;}
+  .page-title{margin-bottom:16px;gap:12px;}
+  .page-title p{font-size:15px;}
+  .page-title .actions,.page-title .actions .btn{width:100%;}
+  .cal-day{height:42px;font-size:14px;}
+  .slot-grid{gap:8px;}
+  .slot-btn{flex:1 1 calc(25% - 8px);min-width:64px;padding:10px 6px;}
+  .modal-box{width:calc(100vw - 24px)!important;max-width:none!important;max-height:calc(100dvh - 24px);overflow-y:auto;padding:20px 18px;}
+  table{display:block;overflow-x:auto;white-space:nowrap;}
+  .btn{white-space:normal;}
+  .hero h1{font-size:32px;}
+  .hero p.sub{font-size:16px;}
+}
+@media (max-width:380px){
+  .hero h1{font-size:28px;}
+  .field-row{gap:12px;}
+  .cal-grid{gap:2px;}
+}
+

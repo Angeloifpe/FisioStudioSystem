@@ -1,0 +1,53 @@
+/* ================= Agenda em tabela ================= */
+.agenda-card{padding:8px 20px 12px;}
+.agenda-tabela{width:100%;border-collapse:collapse;}
+.agenda-tabela thead th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--texto-secundario);font-weight:600;padding:12px 12px;border-bottom:1px solid var(--borda);}
+.agenda-tabela td{padding:11px 12px;border-bottom:1px solid var(--borda);font-size:14px;vertical-align:middle;}
+.agenda-tabela tbody + tbody .dia-linha td{border-top:10px solid #fff;}
+.agenda-tabela .dia-linha td{background:var(--lilas-claro);border-bottom:none;padding:10px 12px;font-size:14px;}
+.agenda-tabela .dia-linha td > *{vertical-align:middle;margin-right:10px;}
+.dia-nome{font-weight:700;font-size:16px;color:var(--ameixa-escura);}
+.dia-data{color:var(--texto-secundario);font-size:13px;}
+.dia-total{color:var(--texto-secundario);font-size:13px;}
+.dia-ver{float:right;margin-right:0!important;font-size:13px;}
+.dia-hoje .dia-linha td{background:#ead2e4;}
+.vazio-linha td{color:var(--texto-secundario);font-size:13px;font-style:italic;}
+.horario-tr:hover{background:var(--creme);}
+.horario-tr.bloqueado td{opacity:.55;}
+.horario-tr.bloqueado td.col-acoes{opacity:1;}
+.td-hora{white-space:nowrap;width:150px;}
+.td-hora strong{font-size:15px;color:var(--ameixa-escura);}
+.ocup{display:flex;align-items:center;gap:10px;min-width:140px;max-width:220px;}
+.ocup .progress-track{flex:1;}
+.ocup span{font-size:13px;font-weight:600;min-width:34px;}
+.col-acoes{text-align:right!important;width:200px;}
+.acoes-linha{display:flex;gap:14px;justify-content:flex-end;}
+.acoes-linha .btn-text{font-size:13px;}
+@media (min-width:901px){
+  .agenda-tabela thead{position:sticky;top:0;background:#fff;z-index:2;}
+}
+@media (max-width:640px){
+  .agenda-card{padding:6px 12px 10px;}
+  .agenda-tabela thead{display:none;}
+  .agenda-tabela,.agenda-tabela tbody,.agenda-tabela tr,.agenda-tabela td{display:block;width:100%;}
+  .agenda-tabela{white-space:normal;overflow:visible;}
+  .agenda-tabela .dia-linha td{border-radius:12px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;}
+  .agenda-tabela .dia-linha td > *{margin-right:0;}
+  .dia-ver{float:none;margin-left:auto;}
+  .horario-tr{display:grid!important;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 4px;border-bottom:1px solid var(--borda);}
+  .horario-tr td{border:none;padding:2px 6px;display:block;width:auto;}
+  .horario-tr td:before{content:none;}
+  .horario-tr .td-hora{grid-column:1;width:auto;}
+  .horario-tr td[data-label="Situação"]{grid-column:2;grid-row:1;text-align:right;}
+  .horario-tr td[data-label="Atendimento"]{grid-column:1;}
+  .horario-tr td[data-label="Ocupação"]{grid-column:2;text-align:right;}
+  .horario-tr .col-acoes{grid-column:1 / -1;width:auto;text-align:left!important;}
+  .acoes-linha{justify-content:flex-start;}
+  .ocup{min-width:0;}
+}
+@media (max-width:640px){
+  .page-title .actions{flex-wrap:wrap;}
+  .page-title .actions .btn{flex:1 1 calc(50% - 8px);}
+  .ocup .progress-track{display:none;}
+}
+

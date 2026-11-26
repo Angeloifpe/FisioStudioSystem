@@ -13,7 +13,7 @@ agendamentosRoutes.use(autenticar);
 const camposAgendamento = `
   a.id, a.paciente_id, a.horario_id, h.modalidade, h.inicio, h.fim,
   a.status, a.experimental, a.avaliacao_para, a.reposicao_de, a.reposicao_liberada, a.remarcado_de, a.fixo_id,
-  a.presenca_confirmada_em, a.cancelamento_solicitado_em, a.motivo_cancelamento,
+  a.presenca_confirmada_em, a.cancelamento_solicitado_em, a.motivo_cancelamento, a.cancelado_fora_do_prazo,
   a.presenca_registrada_em, a.pago_em, a.forma_pagamento,
   (a.experimental AND a.pago_em IS NOT NULL AND a.status = 'FALTA') AS conta_como_dada, a.criado_em,
   (SELECT ho.inicio FROM agendamentos ao JOIN horarios ho ON ho.id = ao.horario_id
@@ -37,11 +37,23 @@ const novoAgendamento = z.object({
   horario_id: z.string().uuid(),
   experimental: z.boolean().default(false),
   reposicao_de: z.string().uuid().optional(),
+  /** Atendimento que o paciente acabou de cancelar e está remarcando (liga os dois para a cliente). */
+  remarcado_de: z.string().uuid().optional(),
   /** Obrigatório na avaliação: para qual modalidade ela é (uma avaliação por modalidade). */
   avaliacao_para: z.enum(['PILATES', 'FISIOTERAPIA'], {
     message: 'Escolha a avaliação: PILATES ou FISIOTERAPIA (para as duas, marque uma avaliação de cada)',
   }).optional(),
 });
+
+/** Confere que o atendimento remarcado é do paciente, está cancelado e é da mesma modalidade. */
+async function conferirRemarcadoDe(c: PoolClient, pacienteId: string, remarcadoDe: string, modalidade: string) {
+  const r = await c.query(
+    `SELECT 1 FROM agendamentos a JOIN horarios h ON h.id = a.horario_id
+      WHERE a.id = $1 AND a.paciente_id = $2 AND a.status = 'CANCELADO' AND h.modalidade = $3`,
+    [remarcadoDe, pacienteId, modalidade],
+  );
+  if (r.rowCount === 0) throw new ErroHttp(422, 'O atendimento que você está remarcando não foi encontrado ou não está cancelado');
+}
 
 /** Cria o agendamento; as regras (vagas, situação, experimental, reposição) são do banco. */
 async function criarAgendamento(c: PoolClient, pacienteId: string, dados: z.infer<typeof novoAgendamento>) {
@@ -53,10 +65,11 @@ async function criarAgendamento(c: PoolClient, pacienteId: string, dados: z.infe
   if (horario.rows[0].modalidade === 'AVALIACAO' && !dados.avaliacao_para) {
     throw new ErroHttp(400, 'Escolha para qual modalidade é a avaliação (avaliacao_para): PILATES ou FISIOTERAPIA');
   }
+  if (dados.remarcado_de) await conferirRemarcadoDe(c, pacienteId, dados.remarcado_de, horario.rows[0].modalidade);
   const r = await c.query(
-    `INSERT INTO agendamentos (paciente_id, horario_id, experimental, reposicao_de, avaliacao_para)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [pacienteId, dados.horario_id, dados.experimental, dados.reposicao_de ?? null, dados.avaliacao_para ?? null],
+    `INSERT INTO agendamentos (paciente_id, horario_id, experimental, reposicao_de, avaliacao_para, remarcado_de)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [pacienteId, dados.horario_id, dados.experimental, dados.reposicao_de ?? null, dados.avaliacao_para ?? null, dados.remarcado_de ?? null],
   );
   return r.rows[0].id as string;
 }
@@ -97,14 +110,16 @@ agendamentosRoutes.get('/fisioterapia/inicios', async (req, res) => {
 const novaFisioterapia = z.object({
   inicio: dataHora,
   reposicao_de: z.string().uuid().optional(),
+  remarcado_de: z.string().uuid().optional(),
 });
 
 /** Paciente marca fisioterapia escolhendo o início; a duração é a cadastrada pela cliente. */
 agendamentosRoutes.post('/fisioterapia', somente('PACIENTE'), async (req, res) => {
   const dados = novaFisioterapia.parse(req.body);
   const agendamento = await transacao(async (c) => {
-    const r = await c.query('SELECT fn_agendar_fisioterapia($1, $2, NULL, $3) AS id', [
-      pacienteDe(req), dados.inicio, dados.reposicao_de ?? null,
+    if (dados.remarcado_de) await conferirRemarcadoDe(c, pacienteDe(req), dados.remarcado_de, 'FISIOTERAPIA');
+    const r = await c.query('SELECT fn_agendar_fisioterapia($1, $2, NULL, $3, $4) AS id', [
+      pacienteDe(req), dados.inicio, dados.reposicao_de ?? null, dados.remarcado_de ?? null,
     ]);
     const id = r.rows[0].id as string;
     await notificar(c, dados.reposicao_de ? 'REPOSICAO_MARCADA' : 'AGENDAMENTO_CRIADO', id);
@@ -232,55 +247,64 @@ agendamentosRoutes.post('/:id/confirmar-presenca', somente('PACIENTE'), async (r
 });
 
 /**
- * Paciente avisa que não vai.
- * - Pilates regular: aviso de falta (veja fn_avisar_falta_pilates); a resposta
- *   traz remarcacao_liberada.
- * - Demais: pede o cancelamento para a cliente decidir (avisa a cliente);
- *   a qualquer hora, até o fim do atendimento.
+ * Paciente cancela o atendimento (sem esperar a decisão da cliente).
+ * - Dentro do prazo (24 h por padrão): cancelado sem cobrança; no pilates regular
+ *   ainda gera a remarcação.
+ * - Fora do prazo: cancelado e a consulta é cobrada (conta como dada).
+ * A resposta traz no_prazo e, no pilates, remarcacao_liberada. A cliente é
+ * avisada e vê o cancelamento (dentro/fora do prazo) em "Pedidos".
  */
 agendamentosRoutes.post('/:id/solicitar-cancelamento', somente('PACIENTE'), async (req, res) => {
   const { motivo } = z.object({ motivo: z.string().trim().max(1000).optional() }).parse(req.body ?? {});
   const pacienteId = pacienteDe(req);
   const id = String(req.params.id);
 
-  // Pilates regular: aviso de falta. Com antecedência mínima (30 min) cancela na
-  // hora, libera a vaga e dá a remarcação; com menos, a aula conta como dada.
   const ag = await queryOne<{ modalidade: string; experimental: boolean }>(
     `SELECT h.modalidade, a.experimental FROM agendamentos a JOIN horarios h ON h.id = a.horario_id
       WHERE a.id = $1 AND a.paciente_id = $2`,
     [id, pacienteId],
   );
-  if (ag?.modalidade === 'PILATES' && !ag.experimental) {
-    const resultado = await transacao(async (c) => {
-      const r = await c.query('SELECT fn_avisar_falta_pilates($1, $2, $3) AS remarcacao', [id, pacienteId, motivo ?? null]);
-      return { ...(await buscarAgendamento(c, id)), remarcacao_liberada: r.rows[0].remarcacao as boolean };
-    });
-    res.json(resultado);
-    return;
-  }
+  if (!ag) throw naoEncontrado('Agendamento');
 
-  const agendamento = await transacao(async (c) => {
-    const r = await c.query(
-      `UPDATE agendamentos a
-          SET status = 'CANCELAMENTO_SOLICITADO',
-              cancelamento_solicitado_em = now(),
-              motivo_cancelamento = $3
-         FROM horarios h
-        WHERE a.id = $1
-          AND a.paciente_id = $2
-          AND h.id = a.horario_id
-          AND a.status = 'AGENDADO'
-          AND h.fim > now()
-        RETURNING a.id`,
-      [String(req.params.id), pacienteId, motivo ?? null],
-    );
-    if (r.rowCount === 0) {
-      throw new ErroHttp(422, 'Só é possível pedir cancelamento de um agendamento seu, ainda não realizado e antes do fim do atendimento');
-    }
-    await notificar(c, 'CANCELAMENTO_SOLICITADO', String(req.params.id));
-    return buscarAgendamento(c, String(req.params.id));
+  const pilatesRegular = ag.modalidade === 'PILATES' && !ag.experimental;
+  const resultado = await transacao(async (c) => {
+    const r = pilatesRegular
+      ? await c.query('SELECT fn_avisar_falta_pilates($1, $2, $3) AS ok', [id, pacienteId, motivo ?? null])
+      : await c.query('SELECT fn_cancelar_pelo_paciente($1, $2, $3) AS ok', [id, pacienteId, motivo ?? null]);
+    const noPrazo = r.rows[0].ok as boolean;
+    return {
+      ...(await buscarAgendamento(c, id)),
+      no_prazo: noPrazo,
+      ...(pilatesRegular ? { remarcacao_liberada: noPrazo } : {}),
+    };
   });
-  res.json(agendamento);
+  res.json(resultado);
+});
+
+/**
+ * Paciente remarca (fisioterapia, avaliação, aula experimental sem pagamento).
+ * - fisioterapia: informe o novo início (inicio)
+ * - avaliação e experimental: informe um horário aberto (horario_id)
+ * O atendimento antigo é cancelado (dentro ou fora do prazo) e o novo fica ligado
+ * a ele. Remarcar fora do prazo não tira a cobrança do atendimento antigo.
+ * Pilates regular: cancele (aviso de falta) e use a remarcação liberada.
+ */
+agendamentosRoutes.post('/:id/remarcar-paciente', somente('PACIENTE'), async (req, res) => {
+  const dados = z.object({ horario_id: z.string().uuid().optional(), inicio: dataHora.optional() })
+    .refine((d) => Boolean(d.horario_id) !== Boolean(d.inicio), {
+      message: 'Informe o horário (horario_id) ou o novo início (inicio), um dos dois',
+      path: ['horario_id'],
+    }).parse(req.body);
+  const id = String(req.params.id);
+
+  const resultado = await transacao(async (c) => {
+    const r = await c.query('SELECT fn_remarcar_pelo_paciente($1, $2, $3, $4) AS id', [
+      id, pacienteDe(req), dados.horario_id ?? null, dados.inicio ?? null,
+    ]);
+    const antigo = await buscarAgendamento(c, id);
+    return { ...(await buscarAgendamento(c, r.rows[0].id as string)), antigo_fora_do_prazo: antigo?.cancelado_fora_do_prazo ?? false };
+  });
+  res.status(201).json(resultado);
 });
 
 // ===========================================================================
@@ -295,10 +319,13 @@ agendamentosRoutes.get('/', somente('ADMIN'), async (req, res) => {
   }).parse(req.query);
 
   const agendamentos = await query(
-    `SELECT ${camposAgendamento}, p.nome_completo, p.telefone, p.situacao
+    `SELECT ${camposAgendamento}, p.nome_completo, p.telefone, p.situacao,
+            q.queixa_principal, to_char(q.inicio_sintomas, 'YYYY-MM-DD') AS queixa_inicio_sintomas,
+            q.diagnostico_clinico, q.sem_diagnostico
        FROM agendamentos a
        JOIN horarios h  ON h.id = a.horario_id
        JOIN pacientes p ON p.id = a.paciente_id
+       LEFT JOIN queixas_pacientes q ON q.paciente_id = a.paciente_id
       WHERE (h.inicio AT TIME ZONE $1)::date = COALESCE($2::date, (now() AT TIME ZONE $1)::date)
         AND ($3::status_agendamento IS NULL OR a.status = $3)
       ORDER BY h.inicio, p.nome_completo`,
@@ -318,6 +345,35 @@ agendamentosRoutes.get('/cancelamentos-pendentes', somente('ADMIN'), async (_req
       ORDER BY a.cancelamento_solicitado_em`,
   );
   res.json(pendentes);
+});
+
+/**
+ * Cancelamentos e remarcações feitos pelos pacientes (últimos N dias, padrão 30),
+ * com a marca de dentro/fora do prazo e, se houve, o novo horário.
+ */
+agendamentosRoutes.get('/cancelamentos-recentes', somente('ADMIN'), async (req, res) => {
+  const { dias } = z.object({ dias: z.coerce.number().int().min(1).max(365).default(30) }).parse(req.query);
+  const lista = await query(
+    `SELECT ${camposAgendamento}, p.nome_completo, p.telefone,
+            n.id AS novo_id, nh.inicio AS novo_inicio,
+            (n.id IS NOT NULL) AS remarcado
+       FROM agendamentos a
+       JOIN horarios h  ON h.id = a.horario_id
+       JOIN pacientes p ON p.id = a.paciente_id
+       LEFT JOIN LATERAL (
+         SELECT x.id, x.horario_id FROM agendamentos x
+          WHERE (x.remarcado_de = a.id OR x.reposicao_de = a.id) AND x.status <> 'CANCELADO'
+          ORDER BY x.criado_em DESC LIMIT 1
+       ) n ON TRUE
+       LEFT JOIN horarios nh ON nh.id = n.horario_id
+      WHERE a.status = 'CANCELADO'
+        AND a.cancelado_fora_do_prazo IS NOT NULL
+        AND a.cancelamento_solicitado_em >= now() - make_interval(days => $1)
+      ORDER BY a.cancelamento_solicitado_em DESC
+      LIMIT 200`,
+    [dias],
+  );
+  res.json(lista);
 });
 
 /** Cliente agenda por um paciente (as mesmas regras valem; avisa o paciente). */

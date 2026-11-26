@@ -43,7 +43,7 @@ pacientesRoutes.get('/:id', async (req, res) => {
   );
   if (!paciente) throw naoEncontrado('Paciente');
 
-  const [avaliacoes, mudancas] = await Promise.all([
+  const [avaliacoes, mudancas, queixa] = await Promise.all([
     query(
       `SELECT a.id, a.resultado, a.avaliacao_para, a.liberado_para, a.observacoes, a.avaliado_em, h.inicio AS data_avaliacao
          FROM avaliacoes a
@@ -60,9 +60,15 @@ pacientesRoutes.get('/:id', async (req, res) => {
         ORDER BY alterado_em DESC`,
       [req.params.id],
     ),
+    queryOne(
+      `SELECT queixa_principal, to_char(inicio_sintomas, 'YYYY-MM-DD') AS inicio_sintomas,
+              diagnostico_clinico, sem_diagnostico, atualizado_em
+         FROM queixas_pacientes WHERE paciente_id = $1`,
+      [req.params.id],
+    ),
   ]);
 
-  res.json({ ...paciente, avaliacoes, mudancas_situacao: mudancas });
+  res.json({ ...paciente, avaliacoes, mudancas_situacao: mudancas, queixa: queixa ?? null });
 });
 
 const edicaoSchema = z.object({

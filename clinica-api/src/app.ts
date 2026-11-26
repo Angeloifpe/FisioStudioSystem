@@ -11,14 +11,18 @@ import { horariosRoutes } from './routes/horarios';
 import { notificacoesRoutes } from './routes/notificacoes';
 import { pacientesRoutes } from './routes/pacientes';
 import { pilatesRoutes } from './routes/pilates';
+import { queixaRoutes } from './routes/queixa';
 import { registrosRoutes } from './routes/registros';
 
 export const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' })); // folga para a foto de perfil
 
 // Página simples para testar a API no navegador: http://localhost:3333/teste
+// Front-end (pasta clinica-front): serve o build em /teste/app
+app.use('/teste/app', express.static(path.join(__dirname, '..', '..', 'clinica-front', 'dist')));
+
 app.use('/teste', express.static(path.join(__dirname, '..', 'public')));
 
 /** Página inicial: confirma que a API está no ar e aponta as rotas principais. */
@@ -28,7 +32,7 @@ app.get('/', (_req, res) => {
     status: 'no ar',
     pagina_de_testes: '/teste',
     saude: '/saude',
-    rotas: ['/auth', '/pacientes', '/horarios', '/agendamentos', '/pilates', '/feriados', '/registros', '/notificacoes', '/alertas'],
+    rotas: ['/auth', '/pacientes', '/horarios', '/agendamentos', '/pilates', '/feriados', '/registros', '/notificacoes', '/alertas', '/queixa'],
     documentacao: 'Veja o README.md da pasta clinica-api',
   });
 });
@@ -48,6 +52,7 @@ app.use('/alertas', alertasRoutes);
 app.use('/notificacoes', notificacoesRoutes);
 app.use('/pilates', pilatesRoutes);
 app.use('/feriados', feriadosRoutes);
+app.use('/queixa', queixaRoutes);
 
 app.use(() => {
   throw new ErroHttp(404, 'Rota não encontrada');

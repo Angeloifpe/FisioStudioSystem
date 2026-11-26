@@ -22,6 +22,9 @@ const mensagensRestricao: Record<string, string> = {
   horarios_check: 'O fim do horário precisa ser depois do início',
   ck_horarios_dias_uteis: 'A clínica funciona de segunda a sexta',
   pilates_fixos_dia_semana_check: 'A clínica funciona de segunda a sexta',
+  ck_queixa_tamanho: 'A queixa deve ter de 5 a 500 caracteres',
+  ck_queixa_diagnostico_tamanho: 'O diagnóstico deve ter no máximo 500 caracteres',
+  usuarios_foto_perfil_check: 'A foto deve ser JPEG, PNG ou WebP e ter até uns 370 KB',
   uq_pilates_fixo_dia: 'Você já tem um horário fixo neste dia da semana',
 };
 

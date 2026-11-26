@@ -1,0 +1,17 @@
+/* ---------- Painel: atendimentos de hoje por horário ---------- */
+.tabela-horarios{display:flex;flex-direction:column;}
+.hora-grupo{display:flex;gap:18px;align-items:flex-start;padding:14px 0;}
+.hora-grupo + .hora-grupo{border-top:1px solid var(--borda);}
+.hora-rotulo{width:76px;flex-shrink:0;font-weight:700;font-size:17px;color:var(--ameixa-escura);display:flex;flex-direction:column;line-height:1.2;}
+.hora-rotulo .muted{font-size:12px;font-weight:500;}
+.hora-pacientes{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
+.hora-linha{display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(150px,1fr) minmax(150px,1fr);gap:8px 14px;align-items:center;}
+.hora-nome{font-weight:600;font-size:15px;color:var(--ameixa-escura);}
+.hora-tipo,.hora-status{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+@media (max-width:640px){
+  .hora-grupo{gap:12px;}
+  .hora-rotulo{width:56px;font-size:15px;}
+  .hora-linha{grid-template-columns:1fr;gap:4px;}
+  .hora-pacientes{gap:14px;}
+}
+

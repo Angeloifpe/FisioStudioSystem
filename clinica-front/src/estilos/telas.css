@@ -1,0 +1,106 @@
+/* ===================== Integração com a API ===================== */
+.spinner{width:22px;height:22px;border:3px solid var(--lilas-claro);border-top-color:var(--primaria);border-radius:50%;animation:gira .8s linear infinite;display:inline-block;flex-shrink:0;}
+.spinner.sm{width:16px;height:16px;border-width:2px;border-color:rgba(255,255,255,.4);border-top-color:#fff;}
+.btn-outline .spinner.sm,.btn-text .spinner.sm{border-color:var(--lilas-claro);border-top-color:var(--primaria);}
+@keyframes gira{to{transform:rotate(360deg)}}
+.estado-carregando{display:flex;align-items:center;gap:12px;justify-content:center;padding:32px 12px;color:var(--texto-secundario);font-size:14px;}
+.erro-box{display:flex;gap:10px;align-items:flex-start;background:var(--vermelho-bg);color:var(--vermelho-fg);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;}
+.erro-box svg{flex-shrink:0;margin-top:1px;}
+.ok-box{display:flex;gap:10px;align-items:flex-start;background:var(--verde-bg);color:var(--verde-fg);border-radius:14px;padding:12px 14px;font-size:14px;}
+.aviso-box{display:flex;gap:10px;align-items:flex-start;background:var(--amarelo-bg);color:var(--amarelo-fg);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;}
+.toast-erro{background:#8a2a2a;}
+.modal-acoes{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px;}
+.btn-icone-claro{background:none;border:none;color:#fff;padding:6px;display:flex;opacity:.9;}
+.btn-icone-claro:hover{opacity:1;}
+.menu-mobile{background:#7a4763;padding:10px 20px;display:flex;flex-direction:column;}
+.menu-mobile a{color:#fff;font-weight:500;padding:10px 0;}
+.seletor-dia{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.seletor-dia input[type=date]{border:1.5px solid var(--lilas-input);border-radius:12px;padding:8px 10px;font-size:14px;color:var(--ameixa-escura);background:#fff;}
+.slot-btn{display:inline-flex;flex-direction:column;align-items:center;gap:2px;}
+.slot-extra{font-size:11px;font-weight:500;opacity:.75;}
+.slot-btn.selected .slot-extra{opacity:.9;}
+
+.sininho{position:relative;}
+.sininho-btn{position:relative;background:none;border:none;color:#fff;padding:6px;display:flex;}
+.sininho-badge{position:absolute;top:0;right:-2px;background:#f2c94c;color:#4b2a45;font-size:10px;font-weight:700;border-radius:999px;min-width:17px;height:17px;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+.sininho-painel{position:absolute;right:-60px;top:44px;width:360px;max-width:calc(100vw - 24px);background:#fff;border-radius:18px;box-shadow:var(--shadow-modal);z-index:60;color:var(--ameixa-escura);overflow:hidden;}
+@media (max-width:560px){.sininho-painel{position:fixed;left:12px;right:12px;top:72px;width:auto;}}
+.sininho-topo{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--borda);}
+.sininho-lista{max-height:380px;overflow-y:auto;}
+.sininho-item{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;background:#fff;border:none;border-bottom:1px solid var(--borda);padding:12px 16px;font-size:14px;line-height:1.4;color:var(--ameixa-escura);}
+.sininho-item small{color:var(--ajuda);font-size:12px;}
+.sininho-item.nao-lida{background:var(--creme);}
+.sininho-item.nao-lida span{font-weight:600;}
+
+.ag-item{display:flex;gap:14px;align-items:flex-start;padding:14px 0;flex-wrap:wrap;}
+.ag-item + .ag-item{border-top:1px solid var(--borda);}
+.ag-hora{min-width:64px;font-weight:600;font-size:15px;}
+.ag-info{flex:1;min-width:200px;display:flex;flex-direction:column;gap:6px;}
+.ag-tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.ag-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.secao-titulo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.secao-titulo h3{font-size:22px;}
+.grade-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.turma-btn{border:1.5px solid var(--lilas-input);background:#fff;border-radius:14px;padding:12px 14px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;color:var(--ameixa-escura);}
+.turma-btn:hover:not(:disabled){background:var(--lilas-claro);}
+.turma-btn.selected{background:var(--primaria);color:#fff;border-color:var(--primaria);}
+.turma-btn:disabled{opacity:.45;cursor:not-allowed;}
+.semana-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:start;}
+@media (max-width:1100px){.semana-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:640px){.semana-grid{grid-template-columns:1fr;}}
+.horario-linha{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--borda);font-size:13px;flex-wrap:wrap;}
+.horario-linha:first-of-type{border-top:none;}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;}
+.kv dt{color:var(--texto-secundario);}
+.kv dd{margin:0;font-weight:600;text-align:right;}
+.select-inline{border:1.5px solid var(--lilas-input);border-radius:12px;padding:8px 10px;font-size:14px;background:#fff;color:var(--ameixa-escura);}
+.lista-simples{display:flex;flex-direction:column;}
+.lista-simples > * + *{border-top:1px solid var(--borda);}
+.tabs-sub{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+.tabs-sub button{border:1.5px solid var(--borda);background:#fff;border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;color:var(--texto-secundario);}
+.tabs-sub button.ativo{background:var(--primaria);border-color:var(--primaria);color:#fff;}
+.senha-gerada{font-family:ui-monospace,Menlo,monospace;font-size:22px;letter-spacing:2px;background:var(--creme);border:1.5px dashed var(--lilas-input);border-radius:14px;padding:14px;text-align:center;}
+.config-api{font-size:12px;color:var(--ajuda);display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;}
+.config-api code{background:var(--creme);padding:2px 6px;border-radius:6px;}
+.page-content{padding-top:36px;padding-bottom:90px;}
+.slot-btn.selected,.slot-btn.selected:hover{background:var(--primaria);color:#fff;border-color:var(--primaria);}
+.turma-btn.selected:disabled{opacity:1;cursor:default;}
+.so-mobile{display:none;}
+@media (max-width:640px){
+  .appbar-user .chip{display:none;}
+  .so-mobile{display:inline-flex;}
+  .appbar-user{gap:8px;}
+  .page-title h1{font-size:30px;}
+}
+.passo-card{border-left:6px solid var(--primaria);}
+.passo-verde{border-left-color:#5a9a52;}
+.passo-amarelo{border-left-color:#d9a23a;}
+.passo-vermelho{border-left-color:#b44a4a;}
+.passo-cinza{border-left-color:#9a9a9a;}
+.passo-num{width:32px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;}
+.alerta-icone{width:32px;height:32px;border-radius:16px;background:var(--vermelho-bg);color:var(--vermelho-fg);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;}
+.metric-link{display:block;transition:border-color .15s, transform .15s;}
+.metric-link:hover{border-color:var(--lilas-input);transform:translateY(-1px);}
+a.list-row{color:inherit;}
+a.list-row:hover{background:var(--creme);}
+
+/* Sobre sua queixa */
+.queixa-ajuda{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--ajuda);}
+.field textarea:disabled{background:#f6f1f4;color:var(--ajuda);cursor:not-allowed;}
+.queixa-box{display:flex;flex-direction:column;gap:6px;background:var(--lilas-claro);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.45;color:var(--ameixa-escura);}
+.queixa-box.compacto{font-size:13px;padding:10px 14px;margin:4px 0;}
+.queixa-box p{margin:0;overflow-wrap:anywhere;}
+
+/* Aviso em vermelho claro (prazo de cancelamento e cobrança) */
+.aviso-vermelho{display:flex;gap:10px;align-items:flex-start;background:#fdecec;color:#8a2c2c;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;}
+.aviso-vermelho svg{flex-shrink:0;margin-top:2px;}
+.divisor{border:none;border-top:1px solid var(--lilas-claro);margin:4px 0;width:100%;}
+/* Sem a borda extra do campo de dentro (senha, busca): quem destaca é a caixa */
+.input-wrap input,.input-wrap input:focus,.input-wrap input:focus-visible,.input-with-action input:focus{border:none !important;box-shadow:none !important;outline:none !important;background:transparent;}
+.input-wrap:focus-within{border-color:var(--primaria);box-shadow:0 0 0 3px rgba(141,84,118,.15);}
+/* Foto de perfil */
+.avatar{overflow:hidden;}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+.avatar-grande{width:96px;height:96px;font-size:34px;}
+.foto-perfil{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+
